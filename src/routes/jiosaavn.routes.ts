@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { jioSaavnController } from '../controllers/jiosaavn.controller';
 
-const router = Router();
+const router: Router = Router();
 
 // GET /api/jiosaavn - Get all scraped data
 router.get('/', jioSaavnController.getAll.bind(jioSaavnController));

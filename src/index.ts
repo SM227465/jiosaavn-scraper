@@ -1,11 +1,11 @@
-import express from 'express'
+import express, { Express } from 'express'
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import errorHandler from './controllers/error.controller';
 import { jioSaavnRouter } from './routes/jiosaavn.routes';
 
-const app = express();
+const app: Express = express();
 
 app.set('trust proxy', 'loopback');
 app.use(cors());
