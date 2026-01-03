@@ -1,59 +1,52 @@
-import express, { Express } from 'express'
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import errorHandler from './controllers/error.controller';
-import { jioSaavnRouter } from './routes/jiosaavn.routes';
 
-const app: Express = express();
+import dotenv from 'dotenv';
+import logger from "./utils/logger.util";
+import { connectRedis, disconnectRedis } from './utils/redis.util';
+import { startJioSaavnCronJob } from './jobs/jiosaavn.cron';
+import app from './server';
 
-app.set('trust proxy', 'loopback');
-app.use(cors());
-
-
-app.use(
-  helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      connectSrc: ["'self'", 'https://ums-be.onrender.com/'],
-    },
-  })
-);
-
-const limiter = rateLimit({
-  max: 900,
-  windowMs: 60 * 60 * 1000,
-  message: 'Too many request from your IP, please try again in an hour.',
+process.on('uncaughtException', (error) => {
+  logger.info('UNCAUGHT EXCEPTION!');
+  logger.error(error.message);
+  process.exit(1);
 });
-app.use('/api', limiter);
 
-app.use(express.json({ limit: '10kb' }));
-// app.use(cookieParser());
+dotenv.config();
 
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    messgae: 'Hello from root route',
+const port = process.env.PORT || 8000;
+
+// Initialize Redis and cron jobs
+const initializeServices = async () => {
+  try {
+    await connectRedis();
+    startJioSaavnCronJob();
+    logger.info('All services initialized successfully');
+  } catch (error) {
+    logger.error('Failed to initialize services');
+    logger.error(error);
+    process.exit(1);
+  }
+};
+
+initializeServices();
+
+const server = app.listen(port, () => {
+  logger.info(`Server is running in ${process.env.NODE_ENV} environment on port ${port}`);
+});
+
+process.on('unhandledRejection', (error) => {
+  logger.info('UNHANDLED REJECTION!');
+  logger.error(error);
+  server.close(() => process.exit(1));
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  await disconnectRedis();
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
   });
 });
-
-// app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-// app.use('/api/documentation', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-// app.use('/api/v1/auth', authRouter);
-// app.use('/api/v1/users', userRouter);
-
-// JioSaavn routes
-app.use('/api/jiosaavn', jioSaavnRouter);
-
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Cannot find ${req.originalUrl} on this server`,
-  });
-});
-
-// 3. Global error handler
-app.use(errorHandler);
-
-export default app;
 
