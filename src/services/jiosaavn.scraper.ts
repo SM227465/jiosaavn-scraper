@@ -46,6 +46,12 @@ export interface JioSaavnScrapedData {
 const JIOSAAVN_BASE_URL = 'https://www.jiosaavn.com';
 
 export class JioSaavnScraper {
+  // Validate if an ID is likely a song ID (alphanumeric) vs album ID (numeric only)
+  // JioSaavn song IDs typically contain letters, while album IDs are purely numeric
+  private isValidSongId(id: string): boolean {
+    // Check if the ID contains at least one letter (not purely numeric)
+    return /[a-zA-Z]/.test(id);
+  }
   private async fetchPage(url: string): Promise<string | null> {
     try {
       logger.info(`Fetching page: ${url}`);
@@ -108,8 +114,9 @@ export class JioSaavnScraper {
         if ((module.key === 'new_trending' || module.key?.includes('new_') || module.key?.includes('trending'))
             && Array.isArray(module.data)) {
           module.data.forEach((item: any) => {
-            // Only include albums and songs, not playlists
-            if ((item.type === 'album' || item.type === 'song') && item.id && item.title) {
+            // Only include songs with valid song IDs (containing letters, not purely numeric)
+            // This filters out album IDs which are purely numeric
+            if (item.type === 'song' && item.id && item.title && this.isValidSongId(item.id)) {
               releases.push({
                 id: item.id,
                 title: item.title?.text || item.title,
