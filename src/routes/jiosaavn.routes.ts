@@ -21,4 +21,7 @@ router.get('/top-artists', jioSaavnController.getTopArtists.bind(jioSaavnControl
 // GET /api/jiosaavn/last-scraped - Get last scraping timestamp
 router.get('/last-scraped', jioSaavnController.getLastScraped.bind(jioSaavnController));
 
+// GET /api/jiosaavn/homepage - Get homepage data with all modules
+router.get('/homepage', jioSaavnController.getHomePage.bind(jioSaavnController));
+
 export { router as jioSaavnRouter };

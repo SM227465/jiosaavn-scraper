@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import logger from "./utils/logger.util";
 import { connectRedis, disconnectRedis } from './utils/redis.util';
 import { startJioSaavnCronJob } from './jobs/jiosaavn.cron';
+import { startKeepAliveCronJob } from './jobs/keepalive.cron';
 import app from './server';
 
 process.on('uncaughtException', (error) => {
@@ -20,6 +21,7 @@ const initializeServices = async () => {
   try {
     await connectRedis();
     startJioSaavnCronJob();
+    startKeepAliveCronJob();
     logger.info('All services initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize services');
