@@ -184,6 +184,36 @@ export class JioSaavnController {
       });
     }
   }
+
+  // Get homepage data with all modules
+  async getHomePage(req: Request, res: Response): Promise<void> {
+    try {
+      const client = redisClient();
+      const data = await client.get('jiosaavn:homePage');
+
+      if (!data) {
+        res.status(404).json({
+          success: false,
+          message: 'No homepage data available',
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: JSON.parse(data),
+      });
+    } catch (error) {
+      logger.error('Error fetching homepage data');
+      if (error instanceof Error) {
+        logger.error(error.message);
+      }
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch homepage data',
+      });
+    }
+  }
 }
 
 export const jioSaavnController = new JioSaavnController();
